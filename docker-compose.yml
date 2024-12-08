@@ -1,0 +1,51 @@
+services:
+  app:
+    build: .
+    container_name: lumen_app
+    working_dir: /var/www/html/
+    volumes:
+      - ./:/var/www/html/
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_DATABASE=user_management
+      - DB_USERNAME=root
+      - DB_PASSWORD=secret
+      - APP_KEY=base64:CUST0MYK3Y==
+    networks:
+      - app-network
+
+  db:
+    image: mysql:8.0
+    container_name: lumen_db
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: user_management
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: lumen_nginx
+    ports:
+      - "8080:80"
+    # Mount the same code directory so nginx can serve from ./public
+    volumes:
+      - ./:/var/www/html/
+      - ./default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - app-network
+
+networks:
+  app-network:
+
+volumes:
+  db_data:
